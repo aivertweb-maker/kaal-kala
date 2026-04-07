@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="en">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Home Tour</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+ 
+    body {
+      background: #000;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+    }
+ 
+    /* Animation scroll container */
+    #scroll-container {
+      height: 500vh;
+      position: relative;
+    }
+ 
+    /* Sticky canvas wrapper */
+    #sticky-wrapper {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+      background-size: cover;
+background-position: center;
+    }
+    @media (max-width: 768px) {
+  #scroll-container {
+    height: 350vh;
+  }
+
+  #main-image {
+    object-position: center center;
+  }
+
+  #scroll-hint {
+    bottom: 24px;
+    font-size: 0.7rem;
+  }
+
+  #scene-label {
+    bottom: 32px;
+    right: 20px;
+    font-size: 0.65rem;
+  }
+
+  #image-counter {
+    top: 14px;
+    right: 14px;
+    font-size: 0.62rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  #scroll-container {
+    height: 420vh;
+  }
+}
+ 
+    /* The image that shows */
+    #main-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    @media (max-width: 1024px) {
+  #sticky-wrapper {
+    background-size: cover !important;
+    background-position: center !important;
+  }
+  #sticky-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -30px;
+    background-image: inherit;
+    background-size: cover;
+    background-position: center;
+    filter: blur(24px) brightness(0.45);
+    z-index: 0;
+  }
+  #main-image {
+    object-fit: contain !important;
+    background: transparent !important;
+    z-index: 1;
+    position: relative;
+  }
+}
+
+    
+ 
+    /* Progress bar at the top */
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 2px;
+      width: 0%;
+      background: white;
+      z-index: 100;
+      transition: width 0.05s linear;
+    }
+ 
+    /* Scroll hint */
+    #scroll-hint {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.7);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      animation: fadeUp 2s infinite;
+      z-index: 100;
+      transition: opacity 0.5s ease;
+    }
+ 
+    #scroll-hint span {
+      display: block;
+      width: 1px;
+      height: 40px;
+      background: rgba(255,255,255,0.5);
+      animation: grow 2s infinite;
+    }
+ 
+    @keyframes fadeUp {
+      0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+      50% { opacity: 1; transform: translateX(-50%) translateY(-5px); }
+    }
+ 
+    @keyframes grow {
+      0% { height: 0px; opacity: 0; }
+      100% { height: 40px; opacity: 0.5; }
+    }
+ 
+    /* Scene label */
+    #scene-label {
+      position: fixed;
+      bottom: 50px;
+      right: 40px;
+      color: rgba(255,255,255,0.8);
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      z-index: 100;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+ 
+    /* Image counter */
+    #image-counter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      z-index: 100;
+    }
+ 
+    /* ── COUNTDOWN OVERLAY shown during the 5-second lock ── */
+    #countdown-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 48px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+ 
+    #countdown-overlay.visible {
+      opacity: 1;
+    }
+ 
+    #countdown-bar-wrap {
+      width: 160px;
+      height: 2px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+ 
+    #countdown-bar {
+      height: 100%;
+      width: 100%;
+      background: #fff;
+      transform-origin: left center;
+      transform: scaleX(1);
+    }
+ 
+    /* ── LOGO PAGE — normal flow, sits below the animation ── */
+    #logo-page {
+      height: 100vh;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+ 
+    #logo-img {
+      width: 300px;
+      max-width: 80%;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 1.2s ease, transform 1.2s ease;
+    }
+ 
+    #logo-img.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    :root {
+  --sand:    #e8ddd0;
+  --sand-2:  #d9cfc0;
+  --cream:   #f5f0ea;
+  --off-white: #faf8f5;
+  --ink:     #0f0e0c;
+  --ink-2:   #1c1a17;
+  --muted:   #7a7469;
+  --accent:  #b89b7a;
+  --accent-dark: #8a7355;
+  --border:  rgba(15,14,12,0.10);
+}
+
+/* ── SERVICES ── */
+#services {
+  min-height: 100vh;
+  padding: 120px 60px 80px;
+  background: var(--off-white);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.section-eyebrow {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+  margin-bottom: 28px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.section-eyebrow.in { opacity: 1; transform: translateY(0); }
+
+.services-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-weight: 300;
+  line-height: 1.05;
+  max-width: 720px;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.9s ease 0.1s, transform 0.9s ease 0.1s;
+}
+.services-headline.in { opacity: 1; transform: translateY(0); }
+.services-headline em { font-style: italic; color: var(--accent-dark); }
+
+.services-intro {
+  max-width: 480px;
+  margin-top: 32px;
+  color: var(--muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.85;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.9s ease 0.2s, transform 0.9s ease 0.2s;
+}
+.services-intro.in { opacity: 1; transform: translateY(0); }
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin: 80px 60px 0;
+}
+
+.service-card {
+  background: var(--off-white);
+  padding: 52px 44px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease, background 0.4s ease;
+}
+.service-card.in { opacity: 1; transform: translateY(0); }
+.service-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s ease;
+}
+.service-card:hover { background: var(--cream); }
+.service-card:hover::after { transform: scaleX(1); }
+
+.service-number {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin-bottom: 28px;
+}
+.service-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.7rem;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.service-desc {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.service-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 28px;
+}
+.service-tag {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+  border: 1px solid var(--accent);
+  padding: 5px 12px;
+}
+
+/* ── ABOUT ── */
+#about {
+  padding: 120px 60px;
+  background: var(--off-white);
+}
+
+.about-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 100px;
+  align-items: start;
+}
+
+.about-left { position: sticky; top: 80px; }
+
+.about-label {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+  margin-bottom: 28px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.about-label.in { opacity: 1; transform: translateY(0); }
+
+.about-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.8rem, 4.5vw, 4.2rem);
+  font-weight: 300;
+  line-height: 1.08;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.9s ease 0.1s, transform 0.9s ease 0.1s;
+}
+.about-headline.in { opacity: 1; transform: translateY(0); }
+.about-headline em { font-style: italic; color: var(--accent-dark); }
+
+.stat-block {
+  margin-top: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.9s ease 0.2s, transform 0.9s ease 0.2s;
+}
+.stat-block.in { opacity: 1; transform: translateY(0); }
+.stat-item { border-top: 1px solid var(--border); padding-top: 20px; }
+.stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3.5rem;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1;
+}
+.stat-desc {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.about-right { padding-top: 64px; }
+
+.about-body p {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  line-height: 1.95;
+  color: var(--muted);
+  margin-bottom: 28px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.about-body p.in { opacity: 1; transform: translateY(0); }
+.about-body p strong { color: var(--ink); font-weight: 500; }
+
+.pull-quote {
+  border-left: 2px solid var(--accent);
+  padding: 24px 32px;
+  margin: 48px 0;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.9s ease 0.1s, transform 0.9s ease 0.1s;
+}
+.pull-quote.in { opacity: 1; transform: translateY(0); }
+.pull-quote p {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.55rem;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink);
+  opacity: 1 !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+
+/* ── PHILOSOPHY STRIP ── */
+.philosophy-strip {
+  background: var(--ink-2);
+  color: var(--sand);
+  padding: 100px 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.philosophy-left {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.2rem, 3.5vw, 3.5rem);
+  font-weight: 300;
+  line-height: 1.2;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.philosophy-left.in { opacity: 1; transform: translateY(0); }
+.philosophy-left em { color: var(--accent); font-style: italic; }
+
+.philosophy-right {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.9s ease 0.15s, transform 0.9s ease 0.15s;
+}
+.philosophy-right.in { opacity: 1; transform: translateY(0); }
+.philosophy-point { border-top: 1px solid rgba(232,221,208,0.15); padding-top: 20px; }
+.philosophy-point h4 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--sand);
+  margin-bottom: 8px;
+}
+.philosophy-point p {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.83rem;
+  line-height: 1.8;
+  color: rgba(232,221,208,0.55);
+}
+
+/* ── CTA BAR ── */
+.cta-bar {
+  background: var(--off-white);
+  padding: 100px 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+}
+.cta-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 300;
+  color: var(--ink);
+  max-width: 500px;
+  line-height: 1.2;
+}
+.cta-text em { font-style: italic; color: var(--accent-dark); }
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--ink);
+  color: var(--sand);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 18px 36px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.cta-btn:hover { background: var(--accent-dark); }
+.cta-btn svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; fill: none; stroke-width: 1.5;
+  transition: transform 0.3s;
+}
+.cta-btn:hover svg { transform: translateX(4px); }
+
+/* ── FULL DIVIDER ── */
+.full-divider { width: 100%; height: 1px; background: var(--sand-2); margin: 100px 0 0; }
+
+/* ══ PORTFOLIO ══ */
+#portfolio {
+  background: var(--off-white);
+  padding: 120px 0 0;
+}
+
+.portfolio-header {
+  padding: 0 60px 80px;
+}
+
+.portfolio-eyebrow {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+  margin-bottom: 28px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.portfolio-eyebrow.in { opacity: 1; transform: translateY(0); }
+
+.portfolio-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-weight: 300;
+  line-height: 1.05;
+  color: var(--ink);
+  max-width: 680px;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.9s ease 0.1s, transform 0.9s ease 0.1s;
+}
+.portfolio-headline.in { opacity: 1; transform: translateY(0); }
+.portfolio-headline em { font-style: italic; color: var(--accent-dark); }
+
+/* Each batch is a scroll-pinned scene */
+.portfolio-batch {
+  opacity: 0;
+  transform: translateY(48px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+  margin-bottom: 2px;
+}
+.portfolio-batch.in { opacity: 1; transform: translateY(0); }
+
+/* ── BATCH LAYOUT A: 2 images ── */
+.batch-2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 2px;
+}
+
+/* ── BATCH LAYOUT B: 3 images ── */
+.batch-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
+}
+
+/* ── BATCH LAYOUT B-ALT: 3 images — large + 2 stacked ── */
+.batch-3-alt {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  grid-template-rows: auto;
+  gap: 2px;
+}
+
+.batch-3-alt .proj-card:first-child {
+  grid-row: span 2;
+}
+
+/* ── PROJECT CARD ── */
+.proj-card {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--sand-2);
+}
+
+/* Tall cards for 2-col layouts */
+.batch-2 .proj-card { aspect-ratio: 4/3; }
+.batch-3 .proj-card { aspect-ratio: 3/4; }
+.batch-3-alt .proj-card { aspect-ratio: auto; min-height: 340px; }
+.batch-3-alt .proj-card:first-child { min-height: 684px; }
+
+/* Placeholder image fill using CSS gradients (replace src with real images) */
+.proj-card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  filter: brightness(0.88);
+}
+
+.proj-card:hover img {
+  transform: scale(1.04);
+  filter: brightness(0.72);
+}
+
+/* Overlay info */
+.proj-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 36px 32px;
+  background: linear-gradient(to top, rgba(15,14,12,0.75) 0%, transparent 55%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 2;
+}
+
+.proj-card:hover .proj-overlay { opacity: 1; }
+
+/* Always-visible index + title strip at bottom */
+.proj-meta {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 24px 28px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.proj-index {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.5);
+}
+
+.proj-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: #fff;
+  line-height: 1.15;
+  text-align: right;
+  max-width: 200px;
+}
+
+.proj-detail {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.proj-desc {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.75);
+}
+
+/* Placeholder gradient fills (swap for real <img> tags) */
+.proj-card.p1 { background: linear-gradient(135deg, #c4b49a 0%, #8a7a65 100%); }
+.proj-card.p2 { background: linear-gradient(135deg, #b5a88e 0%, #6e6254 100%); }
+.proj-card.p3 { background: linear-gradient(135deg, #d4c8b4 0%, #9c8e76 100%); }
+.proj-card.p4 { background: linear-gradient(135deg, #a89880 0%, #5e5446 100%); }
+.proj-card.p5 { background: linear-gradient(135deg, #bdb09a 0%, #786a58 100%); }
+.proj-card.p6 { background: linear-gradient(135deg, #c8bba4 0%, #8c7e6a 100%); }
+.proj-card.p7 { background: linear-gradient(135deg, #b0a48e 0%, #6a5e4e 100%); }
+.proj-card.p8 { background: linear-gradient(135deg, #cfc3ae 0%, #9a8c78 100%); }
+.proj-card.p9 { background: linear-gradient(135deg, #a89278 0%, #5c5040 100%); }
+.proj-card.p10 { background: linear-gradient(135deg, #c2b59e 0%, #827465 100%); }
+
+/* ── BATCH LABEL STRIP between batches ── */
+.batch-label-strip {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 28px 60px;
+  background: var(--cream);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.batch-label-strip span {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.batch-label-strip hr {
+  flex: 1;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* ── VIEW ALL CTA ── */
+.portfolio-end {
+  padding: 80px 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  background: var(--off-white);
+}
+
+.portfolio-end-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.portfolio-count {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 4rem;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.portfolio-count span {
+  font-size: 1rem;
+  color: var(--muted);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+@media (max-width: 900px) {
+  .portfolio-header { padding: 0 28px 60px; }
+  .batch-2,
+  .batch-3,
+  .batch-3-alt { grid-template-columns: 1fr; }
+  .batch-3-alt .proj-card:first-child { grid-row: auto; min-height: 300px; }
+  .batch-2 .proj-card,
+  .batch-3 .proj-card { aspect-ratio: 4/3; }
+  .batch-label-strip { padding: 20px 28px; }
+  .portfolio-end { flex-direction: column; gap: 28px; padding: 60px 28px; align-items: flex-start; }
+}
+
+/* ══ MAP SECTION ══ */
+.portfolio-map-section {
+  background: var(--ink-2);
+  padding: 100px 0 0;
+  position: relative;
+  overflow: hidden;
+  margin-top: 170px;  
+}
+
+.map-header {
+  padding: 0 60px 60px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.map-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.5rem, 4.5vw, 4rem);
+  font-weight: 300;
+  line-height: 1.08;
+  color: var(--sand);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.map-headline.in { opacity: 1; transform: translateY(0); }
+.map-headline em { font-style: italic; color: var(--accent); }
+
+.map-eyebrow {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.map-eyebrow.in { opacity: 1; transform: translateY(0); }
+
+.map-subtitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  color: rgba(232,221,208,0.45);
+  line-height: 1.7;
+  max-width: 280px;
+  text-align: right;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.8s ease 0.1s, transform 0.8s ease 0.1s;
+}
+.map-subtitle.in { opacity: 1; transform: translateY(0); }
+
+/* Map wrapper */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 580px;
+  border-top: 1px solid rgba(232,221,208,0.08);
+}
+
+#kk-map {
+  width: 100%;
+  height: 100%;
+  filter: grayscale(1) brightness(0.38) sepia(0.25);
+  transition: filter 0.5s ease;
+}
+
+.map-wrapper:hover #kk-map {
+  filter: grayscale(0.8) brightness(0.45) sepia(0.2);
+}
+
+/* Custom marker */
+.kk-marker {
+  position: relative;
+  cursor: pointer;
+}
+
+.kk-marker-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: 2px solid rgba(232,221,208,0.6);
+  position: relative;
+  z-index: 2;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.kk-marker:hover .kk-marker-dot,
+.kk-marker.active .kk-marker-dot {
+  background: #fff;
+  transform: scale(1.4);
+}
+
+.kk-marker-pulse {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  opacity: 0;
+  animation: pulse-ring 2.5s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0%   { transform: translate(-50%,-50%) scale(0.4); opacity: 0.8; }
+  100% { transform: translate(-50%,-50%) scale(2);   opacity: 0; }
+}
+
+.kk-marker-label {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(232,221,208,0.7);
+  pointer-events: none;
+  transition: color 0.3s;
+}
+
+.kk-marker:hover .kk-marker-label,
+.kk-marker.active .kk-marker-label {
+  color: #fff;
+}
+
+/* ── PROJECT DETAIL PANEL ── */
+.proj-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,14,12,0.65);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  backdrop-filter: blur(4px);
+}
+.proj-panel-backdrop.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.proj-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 480px;
+  max-width: 95vw;
+  height: 100vh;
+  background: var(--off-white);
+  z-index: 1001;
+  transform: translateX(100%);
+  transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.proj-panel.open { transform: translateX(0); }
+
+.panel-img-wrap {
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.panel-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Placeholder gradient for panel image */
+.panel-img-wrap .panel-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-close {
+  position: absolute;
+  top: 20px; right: 20px;
+  width: 40px; height: 40px;
+  background: var(--ink);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.3s;
+}
+.panel-close:hover { background: var(--accent-dark); }
+.panel-close svg {
+  width: 16px; height: 16px;
+  stroke: #fff; fill: none; stroke-width: 1.8;
+}
+
+.panel-body {
+  padding: 36px 40px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.panel-index {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.panel-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.2rem;
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.panel-location {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.panel-location svg {
+  width: 12px; height: 12px;
+  stroke: var(--accent-dark); fill: none; stroke-width: 2;
+}
+
+.panel-divider {
+  width: 40px;
+  height: 1px;
+  background: var(--accent);
+  margin-bottom: 24px;
+}
+
+.panel-desc {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.9;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+
+.panel-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+
+.panel-meta-item {
+  background: var(--off-white);
+  padding: 16px 18px;
+}
+
+.panel-meta-label {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.panel-meta-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.panel-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--ink);
+  color: var(--sand);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 15px 28px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.panel-cta:hover { background: var(--accent-dark); }
+.panel-cta svg {
+  width: 14px; height: 14px;
+  stroke: currentColor; fill: none; stroke-width: 1.8;
+  transition: transform 0.3s;
+}
+.panel-cta:hover svg { transform: translateX(4px); }
+
+
+
+@media (max-width: 900px) {
+  .map-header { padding: 0 28px 48px; flex-direction: column; align-items: flex-start; }
+  .map-subtitle { text-align: left; }
+  .map-wrapper { height: 360px; }
+  .proj-panel { width: 100vw; }
+  .panel-body { padding: 24px 24px; }
+}
+
+.c-field {
+  margin-bottom: 36px;
+  position: relative;
+}
+.c-field label {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  transition: color 0.3s;
+}
+.c-field:focus-within label { color: var(--accent-dark); }
+.c-field input,
+.c-field select,
+.c-field textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--sand-2);
+  padding: 10px 0 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.3s;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+.c-field input::placeholder,
+.c-field textarea::placeholder { color: rgba(15,14,12,0.2); }
+.c-field input:focus,
+.c-field select:focus,
+.c-field textarea:focus { border-bottom-color: var(--accent-dark); }
+.c-field select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a7355' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  padding-right: 24px;
+}
+.c-tag {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+  border: 1px solid var(--accent);
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+.c-tag input { display: none; }
+.c-tag:has(input:checked) {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--sand);
+}
+#contact input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid var(--off-white);
+  box-shadow: 0 0 0 1px var(--accent-dark);
+  cursor: pointer;
+}
+#contact {
+  margin-top: 2px;
+}
+
+@media (max-width: 900px) {
+  #contact { grid-template-columns: 1fr !important; }
+}
+
+
+@media (max-width: 768px) {
+
+  /* NAV */
+  #main-nav { padding: 20px 24px; }
+  .nav-links { gap: 20px; }
+  .nav-links a { font-size: 0.58rem; }
+
+  /* SERVICES */
+  #services { padding: 100px 24px 60px; }
+  .services-grid { grid-template-columns: 1fr; margin: 60px 24px 0; }
+  .service-card { padding: 36px 28px; }
+
+  /* FULL DIVIDER */
+  .full-divider { margin: 60px 0 0; }
+
+  /* ABOUT */
+  #about { padding: 80px 24px; }
+  .about-layout { grid-template-columns: 1fr; gap: 48px; }
+  .about-left { position: static; }
+  .about-right { padding-top: 0; }
+
+  /* PHILOSOPHY */
+  .philosophy-strip {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 80px 24px;
+  }
+
+  /* CTA BAR */
+  .cta-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 32px;
+    padding: 60px 24px;
+  }
+
+  /* PORTFOLIO */
+  #portfolio { padding: 80px 0 0; }
+  .portfolio-header { padding: 0 24px 48px; }
+  .batch-2,
+  .batch-3,
+  .batch-3-alt { grid-template-columns: 1fr; }
+  .batch-3-alt .proj-card:first-child { grid-row: auto; min-height: 300px; }
+  .batch-2 .proj-card,
+  .batch-3 .proj-card { aspect-ratio: 4/3; }
+  .batch-label-strip { padding: 20px 24px; }
+  .portfolio-end { flex-direction: column; gap: 20px; padding: 48px 24px; }
+
+  /* MAP */
+  .portfolio-map-section { margin-top: 60px; }
+  .map-header { padding: 0 24px 40px; flex-direction: column; align-items: flex-start; }
+  .map-subtitle { text-align: left; max-width: 100%; }
+  .map-wrapper { height: 320px; }
+  #map-search-wrap { padding: 0 24px 20px !important; }
+
+  /* CONTACT */
+  #contact { grid-template-columns: 1fr !important; }
+  #contact > div:first-child { padding: 80px 24px 60px; min-height: auto; }
+  #contact > div:last-child { padding: 60px 24px 80px; }
+  #contact form > div:first-child { grid-template-columns: 1fr !important; }
+
+  /* PANEL */
+  .proj-panel { width: 100vw; }
+  .panel-body { padding: 24px; }
+
+  /* FOOTER */
+  footer { padding: 32px 24px !important; }
+}
+
+@media (max-width: 480px) {
+
+  /* smaller phones */
+  .services-headline,
+  .portfolio-headline { font-size: 2.4rem; }
+
+  .about-headline { font-size: 2.2rem; }
+
+  .map-headline { font-size: 2rem; }
+
+  .cta-text { font-size: 1.8rem; }
+
+  .stat-num { font-size: 2.8rem; }
+
+  .pull-quote p { font-size: 1.2rem; }
+
+  
+}
+
+#main-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 60px;
+  background: rgba(250,248,245,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-100%);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+#main-nav.visible {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+}
+.nav-brand {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-links {
+  display: flex;
+  gap: 40px;
+}
+.nav-links a {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--ink); }
+
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  z-index: 600;
+}
+.nav-hamburger span {
+  display: block;
+  width: 24px;
+  height: 1.5px;
+  background: var(--ink);
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+.nav-hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2) { opacity: 0; }
+.nav-hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+.nav-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--off-white);
+  z-index: 550;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.nav-mobile-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+}
+.nav-mobile-link {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3rem;
+  font-weight: 300;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  transition: color 0.3s;
+}
+.nav-mobile-link:hover { color: var(--accent-dark); }
+
+@media (max-width: 1024px) {
+  .nav-hamburger { display: flex; }
+  .nav-links { display: none; }
+  #main-nav { padding: 20px 28px; }
+}
+
+@media (max-width: 768px) {
+  #logo-page {
+    padding: 40px 24px;
+  }
+  #logo-img {
+    width: 200px;
+  }
+}
+  </style>
+</head>
+<body>
+  <div id="loading-screen" style="
+  position: fixed; inset: 0; z-index: 9999;
+  background: #0f0e0c;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 32px;
+  transition: opacity 0.8s ease;
+">
+  <p style="font-family:'Cormorant Garamond',serif; font-size:clamp(2rem,5vw,4rem); font-weight:300; color:#e8ddd0; letter-spacing:0.15em;">Kaal Kala</p>
+  <div style="width:200px; height:1px; background:rgba(232,221,208,0.15); overflow:hidden;">
+    <div id="loading-bar" style="height:100%; width:0%; background:#b89b7a; transition:width 0.3s ease;"></div>
+  </div>
+  <p id="loading-text" style="font-family:'Outfit',sans-serif; font-size:0.65rem; letter-spacing:0.35em; text-transform:uppercase; color:rgba(232,221,208,0.4);">Loading</p>
+</div>
+ 
+  <div id="progress-bar"></div>
+ <nav id="main-nav">
+  <a href="#" class="nav-brand">Kaal Kala</a>
+  <div class="nav-links">
+    <a href="#services">Practice</a>
+    <a href="#about">About</a>
+    <a href="#portfolio">Work</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <button class="nav-hamburger" id="nav-hamburger">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="nav-mobile-overlay" id="nav-mobile-overlay">
+  <a href="#services" class="nav-mobile-link">Practice</a>
+  <a href="#about" class="nav-mobile-link">About</a>
+  <a href="#portfolio" class="nav-mobile-link">Work</a>
+  <a href="#contact" class="nav-mobile-link">Contact</a>
+</div>
+
+  <!-- Animation section -->
+  <div id="scroll-container">
+    <div id="sticky-wrapper">
+      <img id="main-image" src="images/frame_001.webp" alt="Home Tour"/>
+    </div>
+  </div>
+ 
+  <!-- Logo page — normal flow below the animation -->
+  <div id="logo-page">
+    <img src="logo.png" id="logo-img" alt="Logo"/>
+  </div>
+  <!-- ══ SERVICES ══ -->
+<section id="services">
+  <p class="section-eyebrow reveal">Our Practice</p>
+  <h1 class="services-headline reveal">Architecture as<br><em>memory, material</em><br>and meaning.</h1>
+  <p class="services-intro reveal">We shape buildings that carry time within them — drawing from the ancient while speaking to the now. Every commission is a new conversation between place, purpose, and permanence.</p>
+</section>
+
+<div class="services-grid">
+  <div class="service-card reveal" style="transition-delay:0s">
+    <p class="service-number">01</p>
+    <h3 class="service-title">Architectural Design</h3>
+    <p class="service-desc">From concept to completion, we design structures that balance bold spatial ambition with deep contextual sensitivity — buildings that belong.</p>
+    <div class="service-tag-list">
+      <span class="service-tag">Residential</span>
+      <span class="service-tag">Commercial</span>
+      <span class="service-tag">Cultural</span>
+    </div>
+  </div>
+  <div class="service-card reveal" style="transition-delay:0.1s">
+    <p class="service-number">02</p>
+    <h3 class="service-title">Interior Architecture</h3>
+    <p class="service-desc">We craft interior environments where proportion, light, and material are instruments — spaces that move people without announcing themselves.</p>
+    <div class="service-tag-list">
+      <span class="service-tag">Spatial Planning</span>
+      <span class="service-tag">Material Curation</span>
+    </div>
+  </div>
+  <div class="service-card reveal" style="transition-delay:0.2s">
+    <p class="service-number">03</p>
+    <h3 class="service-title">Master Planning</h3>
+    <p class="service-desc">Urban visions that weave infrastructure, green space, and human scale into living, breathing neighbourhoods with a coherent identity.</p>
+    <div class="service-tag-list">
+      <span class="service-tag">Urban Design</span>
+      <span class="service-tag">Township</span>
+    </div>
+  </div>
+  <div class="service-card reveal" style="transition-delay:0s">
+    <p class="service-number">04</p>
+    <h3 class="service-title">Heritage & Restoration</h3>
+    <p class="service-desc">Preservation that honours history without freezing it — adapting heritage structures for contemporary life with care and craftsmanship.</p>
+    <div class="service-tag-list">
+      <span class="service-tag">Conservation</span>
+      <span class="service-tag">Adaptive Reuse</span>
+    </div>
+  </div>
+  <div class="service-card reveal" style="transition-delay:0.1s">
+    <p class="service-number">05</p>
+    <h3 class="service-title">Landscape Design</h3>
+    <p class="service-desc">The ground around a building is as important as the building itself. We design outdoor environments that extend the architecture into nature.</p>
+    <div class="service-tag-list">
+      <span class="service-tag">Courtyards</span>
+      <span class="service-tag">Public Realm</span>
+    </div>
+  </div>
+  <div class="service-card reveal" style="transition-delay:0.2s">
+    <p class="service-number">06</p>
+    <h3 class="service-title">Visualisation & Consulting</h3>
+    <p class="service-desc">High-fidelity architectural visualisation and strategic consultancy — helping developers and institutions realise the full potential of their sites.</p>
+    <div class="service-tag-list">
+      <span class="service-tag">3D Rendering</span>
+      <span class="service-tag">Feasibility</span>
+    </div>
+  </div>
+</div>
+
+<div class="full-divider"></div>
+
+<!-- ══ ABOUT ══ -->
+<section id="about">
+  <div class="about-layout">
+    <div class="about-left">
+      <p class="about-label reveal">Who We Are</p>
+      <h2 class="about-headline reveal">Rooted in<br><em>time.</em><br>Built for now.</h2>
+      <div class="stat-block reveal">
+        <div class="stat-item">
+          <p class="stat-num">18</p>
+          <p class="stat-desc">Years of practice</p>
+        </div>
+        <div class="stat-item">
+          <p class="stat-num">140+</p>
+          <p class="stat-desc">Projects completed</p>
+        </div>
+        <div class="stat-item">
+          <p class="stat-num">12</p>
+          <p class="stat-desc">Design awards</p>
+        </div>
+      </div>
+    </div>
+    <div class="about-right">
+      <div class="about-body">
+        <p class="reveal"><strong>Kaal Kala</strong> — meaning "time" and "art" — was founded on the belief that architecture is not merely the construction of spaces, but the crafting of experiences that exist across eras.</p>
+        <p class="reveal" style="transition-delay:0.1s">We are a Mumbai-based practice with a portfolio that spans private residences, cultural institutions, urban master plans, and heritage conservation projects across India and abroad.</p>
+        <div class="pull-quote reveal" style="transition-delay:0.15s">
+          <p>"A building should feel inevitable — as if the land itself had decided to rise in that particular way."</p>
+        </div>
+        <p class="reveal" style="transition-delay:0.2s">Every project begins not with sketches but with questions: What stories does this site carry? Who will inhabit these walls? What will remain when the fashions have passed?</p>
+        <p class="reveal" style="transition-delay:0.25s">Our practice is structured around small, dedicated teams — architects, historians, craftspeople and engineers — who remain with each project from inception through handover.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PHILOSOPHY STRIP ══ -->
+<div class="philosophy-strip">
+  <div class="philosophy-left reveal">
+    Architecture is<br>the art of making<br><em>time visible.</em>
+  </div>
+  <div class="philosophy-right reveal">
+    <div class="philosophy-point">
+      <h4>Context over Convention</h4>
+      <p>Every site has a language. Our first task is always to listen — to the soil, the light, the culture — before we begin to speak in form.</p>
+    </div>
+    <div class="philosophy-point">
+      <h4>Craft as Philosophy</h4>
+      <p>We believe in the intelligence of the hand. Wherever possible, we engage local artisans and traditional techniques, updating them for contemporary life.</p>
+    </div>
+    <div class="philosophy-point">
+      <h4>Longevity over Trend</h4>
+      <p>We design for the century, not the season — choosing materials and forms that age gracefully, not grudgingly.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CTA ══ -->
+<div class="cta-bar">
+  <p class="cta-text">Ready to begin a <em>conversation</em> about your project?</p>
+  <a href="#contact" class="cta-btn">
+    Get in Touch
+    <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+  </a>
+</div>
+
+ <!-- ══ PORTFOLIO ══ -->
+<section id="portfolio">
+
+  <div class="portfolio-header">
+    <p class="portfolio-eyebrow reveal">Selected Works</p>
+    <h2 class="portfolio-headline reveal">Ten projects.<br><em>One language.</em></h2>
+  </div>
+
+  <!-- BATCH 1 — 2 images -->
+  <div class="batch-label-strip">
+    <span>Residential</span>
+    <hr>
+  </div>
+  <div class="portfolio-batch batch-2 reveal">
+    <div class="proj-card p1">
+      <!-- <img src="portfolio/project-1a.jpg" alt="The Verandah House"> -->
+      <div class="proj-meta">
+        <span class="proj-index">01</span>
+        <p class="proj-title">The  House</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Alibaug, 2023</p>
+        <p class="proj-desc">A coastal residence that folds inside and outside into a single continuous experience of light and breeze.</p>
+      </div>
+    </div>
+    <div class="proj-card p2">
+      <!-- <img src="portfolio/project-1b.jpg" alt="The Verandah House"> -->
+      <div class="proj-meta">
+        <span class="proj-index">01</span>
+        <p class="proj-title">The House</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Interior View</p>
+        <p class="proj-desc">Locally sourced laterite stone walls and reclaimed teak joinery ground the interiors in material memory.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BATCH 2 — 3 images -->
+  <div class="batch-label-strip">
+    <span>Cultural</span>
+    <hr>
+  </div>
+  <div class="portfolio-batch batch-3 reveal" style="transition-delay:0.05s">
+    <div class="proj-card p3">
+      <!-- <img src="portfolio/project-2a.jpg" alt="Sangam Arts Centre"> -->
+      <div class="proj-meta">
+        <span class="proj-index">02</span>
+        <p class="proj-title">Arts Centre</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Pune, 2022</p>
+        <p class="proj-desc">A cultural complex built around a central courtyard that acts as an open-air stage for the city.</p>
+      </div>
+    </div>
+    <div class="proj-card p4">
+      <!-- <img src="portfolio/project-2b.jpg" alt="Sangam Arts Centre"> -->
+      <div class="proj-meta">
+        <span class="proj-index">02</span>
+        <p class="proj-title"> Arts Centre</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Courtyard Detail</p>
+        <p class="proj-desc">Archways reference the Maratha arcade tradition while carrying contemporary structural steel within.</p>
+      </div>
+    </div>
+    <div class="proj-card p5">
+      <!-- <img src="portfolio/project-3a.jpg" alt="Kund Gallery"> -->
+      <div class="proj-meta">
+        <span class="proj-index">03</span>
+        <p class="proj-title"> Gallery</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Delhi, 2021</p>
+        <p class="proj-desc">A private gallery shaped around a stepwell — water as the organizing principle of the entire plan.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BATCH 3 — 2 images -->
+  <div class="batch-label-strip">
+    <span>Urban</span>
+    <hr>
+  </div>
+  <div class="portfolio-batch batch-2 reveal" style="transition-delay:0.05s">
+    <div class="proj-card p6">
+      <!-- <img src="portfolio/project-4a.jpg" alt="Nakshatra Township"> -->
+      <div class="proj-meta">
+        <span class="proj-index">04</span>
+        <p class="proj-title"> Township</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Navi Mumbai, 2023</p>
+        <p class="proj-desc">A 40-acre master plan that weaves water channels, public plazas and mixed-use living into a walkable urban fabric.</p>
+      </div>
+    </div>
+    <div class="proj-card p7">
+      <!-- <img src="portfolio/project-5a.jpg" alt="The Mill Quarter"> -->
+      <div class="proj-meta">
+        <span class="proj-index">05</span>
+        <p class="proj-title">The  Quarter</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Heritage · Mumbai, 2020</p>
+        <p class="proj-desc">Adaptive reuse of a 19th-century textile mill into a mixed-use creative district — preserving the bones, reimagining the skin.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BATCH 4 — 3 images, large + 2 stacked -->
+  <div class="batch-label-strip">
+    <span>Hospitality & Landscape</span>
+    <hr>
+  </div>
+  <div class="portfolio-batch batch-3-alt reveal" style="transition-delay:0.05s">
+    <div class="proj-card p8">
+      <!-- <img src="portfolio/project-6a.jpg" alt="Pahar Retreat"> -->
+      <div class="proj-meta">
+        <span class="proj-index">06</span>
+        <p class="proj-title"> Retreat</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Coorg, 2022</p>
+        <p class="proj-desc">A hillside lodge where each pavilion is positioned to frame a specific view of the valley below — architecture as telescope.</p>
+      </div>
+    </div>
+    <div class="proj-card p9">
+      <!-- <img src="portfolio/project-7a.jpg" alt="Jal Udyan"> -->
+      <div class="proj-meta">
+        <span class="proj-index">07</span>
+        <p class="proj-title"> Udyan</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Landscape · Jaipur, 2021</p>
+        <p class="proj-desc">A public garden centred on a restored baoli, reviving the ancient tradition of water as civic gathering place.</p>
+      </div>
+    </div>
+    <div class="proj-card p10">
+      <!-- <img src="portfolio/project-8a.jpg" alt="Dune House"> -->
+      <div class="proj-meta">
+        <span class="proj-index">08</span>
+        <p class="proj-title"> House</p>
+      </div>
+      <div class="proj-overlay">
+        <p class="proj-detail">Residential · Goa, 2023</p>
+        <p class="proj-desc">Built low into the dunes, almost invisible from the road — a house that chooses humility over spectacle.</p>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- ══ MAP SECTION ══ -->
+<div class="portfolio-map-section">
+
+  <div class="map-header">
+    <div>
+      <p class="map-eyebrow reveal">Where We've Built</p>
+      <h2 class="map-headline reveal">Our work,<br><em>placed on earth.</em></h2>
+    </div>
+    <p class="map-subtitle reveal">Six locations across India — each site chosen, each context studied, each building rooted in its place.</p>
+  </div>
+<div style="padding: 0 60px 24px;">
+  <input id="map-search" type="text" placeholder="Search a city or project..."
+    style="width:100%; max-width:400px; padding:12px 20px; background:rgba(232,221,208,0.08);
+    border:1px solid rgba(232,221,208,0.15); color:var(--sand); font-family:'Outfit',sans-serif;
+    font-size:0.82rem; letter-spacing:0.08em; outline:none;">
+</div>
+  <div class="map-wrapper">
+    <div id="kk-map"></div>
+  </div>
+
+  <<div class="map-header" style="padding: 48px 60px 60px;">
+    <div>
+      <p class="map-eyebrow reveal"></p>
+      <h2 class="map-headline reveal"><br><em></em></h2>
+    </div>
+    <p class="map-subtitle reveal"></p>
+  </div>
+  
+</div>
+
+<!-- ── Panel backdrop ── -->
+<div class="proj-panel-backdrop" id="panel-backdrop"></div>
+
+<!-- ── Sliding detail panel ── -->
+<div class="proj-panel" id="proj-panel">
+  <div class="panel-img-wrap">
+    <div class="panel-img-placeholder" id="panel-img"></div>
+    <button class="panel-close" id="panel-close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="panel-body">
+    <p class="panel-index" id="panel-index"></p>
+    <h3 class="panel-title" id="panel-title"></h3>
+    <p class="panel-location">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <span id="panel-location"></span>
+    </p>
+    <div class="panel-divider"></div>
+    <p class="panel-desc" id="panel-desc"></p>
+    <div class="panel-meta-grid" id="panel-meta"></div>
+    
+  </div>
+</div>
+<!-- ══ CONTACT ══ -->
+<section id="contact" style="display:grid; grid-template-columns:1fr 1fr; min-height:100vh;">
+
+  <!-- LEFT -->
+  <div style="background:var(--ink-2); padding:100px 60px 80px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
+    <div style="position:absolute; top:60px; right:60px; width:70px; height:70px; border-top:1px solid rgba(232,221,208,0.1); border-right:1px solid rgba(232,221,208,0.1);"></div>
+    <div>
+      <p class="map-eyebrow reveal" style="color:var(--accent);">Begin a Conversation</p>
+      <h2 class="map-headline reveal" style="margin-top:0;">Let's build<br>something<br><em>together.</em></h2>
+      <p style="font-family:'Outfit',sans-serif; font-size:0.88rem; line-height:1.9; color:rgba(232,221,208,0.45); max-width:340px; margin-top:32px;">Every great building begins with a conversation. Tell us about your project and we'll respond within two working days.</p>
+    </div>
+    <div>
+      <div style="border-top:1px solid rgba(232,221,208,0.1); padding-top:24px; margin-top:24px;">
+        <p style="font-family:'Outfit',sans-serif; font-size:0.58rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--accent); margin-bottom:8px;">Studio</p>
+        <p style="font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:300; color:var(--sand); line-height:1.6;">Kaal Kala Architecture<br></p>
+      </div>
+      <div style="border-top:1px solid rgba(232,221,208,0.1); padding-top:24px; margin-top:24px;">
+        <p style="font-family:'Outfit',sans-serif; font-size:0.58rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--accent); margin-bottom:8px;">Write to us</p>
+        <p style="font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:300; color:var(--sand);">studio@kaalkala.in</p>
+      </div>
+      <div style="border-top:1px solid rgba(232,221,208,0.1); padding-top:24px; margin-top:24px;">
+        <p style="font-family:'Outfit',sans-serif; font-size:0.58rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--accent); margin-bottom:8px;">Call us</p>
+        <p style="font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:300; color:var(--sand);">+91 xxxxxx</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT — FORM -->
+  <div style="background:var(--off-white); padding:100px 72px 80px;">
+    <p style="font-family:'Outfit',sans-serif; font-size:0.62rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--accent-dark); margin-bottom:48px;">Inquiry Form</p>
+
+    <form id="contact-form" novalidate>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 32px;">
+        <div class="c-field">
+          <label for="c-fname">First Name</label>
+          <input type="text" id="c-fname" placeholder="name" required>
+        </div>
+        <div class="c-field">
+          <label for="c-lname">Last Name</label>
+          <input type="text" id="c-lname" placeholder="surname" required>
+        </div>
+      </div>
+
+      <div class="c-field">
+        <label for="c-email">Email Address</label>
+        <input type="email" id="c-email" placeholder="name@example.com" required>
+      </div>
+
+      <div class="c-field">
+        <label for="c-phone">Phone Number</label>
+        <input type="tel" id="c-phone" placeholder="+91 98xxxxxx">
+      </div>
+
+      <div class="c-field">
+        <label for="c-type">Project Type</label>
+        <select id="c-type" required>
+          <option value="" disabled selected>Select a service</option>
+          <option>Architectural Design</option>
+          <option>Interior Architecture</option>
+          <option>Master Planning</option>
+          <option>Heritage & Restoration</option>
+          <option>Landscape Design</option>
+          <option>Visualisation & Consulting</option>
+        </select>
+      </div>
+
+      <div class="c-field">
+        <label for="c-loc">Project Location</label>
+        <input type="text" id="c-loc" placeholder="City, State">
+      </div>
+
+      <div style="margin-bottom:36px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+          <span style="font-family:'Outfit',sans-serif; font-size:0.6rem; letter-spacing:0.28em; text-transform:uppercase; color:var(--muted);">Approximate Budget</span>
+          <span style="font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--ink);" id="c-budget-out">₹1 Cr</span>
+        </div>
+        <input type="range" id="c-budget" min="0" max="10" step="1" value="2" style="width:100%; height:1px; -webkit-appearance:none; appearance:none; background:var(--sand-2); outline:none; cursor:pointer; margin:0;">
+      </div>
+
+      <div style="margin-bottom:36px;">
+        <span style="font-family:'Outfit',sans-serif; font-size:0.6rem; letter-spacing:0.28em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:16px;">I'm interested in</span>
+        <div style="display:flex; flex-wrap:wrap; gap:10px;" id="c-tags">
+          <label class="c-tag"><input type="checkbox" value="New Build"> New Build</label>
+          <label class="c-tag"><input type="checkbox" value="Renovation"> Renovation</label>
+          <label class="c-tag"><input type="checkbox" value="Interiors"> Interiors</label>
+          <label class="c-tag"><input type="checkbox" value="Landscape"> Landscape</label>
+          <label class="c-tag"><input type="checkbox" value="Consulting"> Consulting</label>
+        </div>
+      </div>
+
+      <div class="c-field">
+        <label for="c-msg">Tell us about your project</label>
+        <textarea id="c-msg" rows="4" placeholder="Share any context — site, programme, timeline, or simply what you have in mind." required style="resize:none;"></textarea>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; padding-top:32px; border-top:1px solid var(--border); margin-top:8px;">
+        <p style="font-family:'Outfit',sans-serif; font-size:0.72rem; color:var(--muted); line-height:1.6;">We respond within<br>two working days.</p>
+        <button type="submit" class="cta-btn">
+          Send Inquiry
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+    </form>
+
+    <!-- Success -->
+    <div id="c-success" style="display:none; flex-direction:column; justify-content:center; height:100%;">
+      <div style="width:52px; height:52px; border:1px solid var(--accent); display:flex; align-items:center; justify-content:center; margin-bottom:40px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke="var(--accent-dark)"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h3 style="font-family:'Cormorant Garamond',serif; font-size:clamp(2rem,3vw,3rem); font-weight:300; line-height:1.1; color:var(--ink); margin-bottom:20px;">Your inquiry<br>has been <em style="font-style:italic; color:var(--accent-dark);">received.</em></h3>
+      <p style="font-family:'Outfit',sans-serif; font-size:0.88rem; line-height:1.85; color:var(--muted); max-width:360px; margin-bottom:40px;">Thank you for reaching out. One of our architects will review your brief and be in touch within two working days.</p>
+      <button onclick="resetContactForm()" style="display:inline-flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; font-family:'Outfit',sans-serif; font-size:0.68rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--muted);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Submit another inquiry
+      </button>
+    </div>
+  </div>
+</section>
+<!-- ══ FOOTER ══ -->
+<!-- ══ FOOTER ══ -->
+<!-- ══ FOOTER ══ -->
+<footer style="margin-top:3px;background:var(--ink); padding:40px 60px; border-top:1px solid rgba(232,221,208,0.06); display:flex; flex-direction:column; align-items:center; gap:10px;">
+  <p style="font-family:'Cormorant Garamond',serif; font-size:0.85rem; letter-spacing:0.18em; color:rgba(232,221,208,0.3);">© 2024 Kaal Kala Architecture. All rights reserved.</p>
+  <p style="font-family:'Outfit',sans-serif; font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:rgba(232,221,208,0.2);">
+    Designed by <a href="https://www.instagram.com/aivertweb" target="_blank" style="color:var(--accent); text-decoration:none;" onmouseover="this.style.color='var(--sand)'" onmouseout="this.style.color='var(--accent)'">Anvita</a>
+  </p>
+</footer>
+</section>
+  <!-- UI chrome -->
+  <div id="scroll-hint">scroll<span></span></div>
+  <div id="scene-label"></div>
+  
+ 
+  <!-- 5-second countdown bar -->
+  <div id="countdown-overlay">
+    <div id="countdown-bar-wrap">
+      <div id="countdown-bar"></div>
+    </div>
+  </div>
+ 
+<script>
+  const TOTAL_FRAMES  = 35;
+  const IMAGE_FOLDER  = 'images/';
+  const LOCK_DURATION = 3000; // ms to hold on last frame
+ 
+  function getImagePath(index) {
+    return `${IMAGE_FOLDER}frame_${String(index).padStart(3,'0')}.webp`;
+  }
+ 
+  const sceneLabels = [
+    { frame: 1,  label: "The Counter"   },
+    { frame: 6,  label: "The Table"     },
+    { frame: 11, label: "The Sculpture" },
+    { frame: 16, label: "Room One"      },
+    { frame: 21, label: "Room Two"      },
+    { frame: 26, label: "The Exterior"  },
+    { frame: 31, label: ""              },
+  ];
+ 
+  const images = [];
+  let loadedCount = 0;
+  const loadingScreen = document.getElementById('loading-screen');
+  const loadingBar = document.getElementById('loading-bar');
+  const loadingText = document.getElementById('loading-text');
+
+  for (let i = 1; i <= TOTAL_FRAMES; i++) {
+    const img = new Image();
+    img.onload = img.onerror = () => {
+      loadedCount++;
+      const pct = Math.round((loadedCount / TOTAL_FRAMES) * 100);
+      loadingBar.style.width = pct + '%';
+      loadingText.textContent = pct + '%';
+      if (loadedCount === TOTAL_FRAMES) {
+        setTimeout(() => {
+          loadingScreen.style.opacity = '0';
+          setTimeout(() => loadingScreen.style.display = 'none', 800);
+        }, 400);
+      }
+    };
+    img.src = getImagePath(i);
+    images.push(img);
+  }
+ 
+  const mainImage        = document.getElementById('main-image');
+  const progressBar      = document.getElementById('progress-bar');
+  const sceneLabel       = document.getElementById('scene-label');
+  const counter          = document.getElementById('image-counter');
+  const scrollHint       = document.getElementById('scroll-hint');
+  const countdownOverlay = document.getElementById('countdown-overlay');
+  const countdownBar     = document.getElementById('countdown-bar');
+  const logoImg          = document.getElementById('logo-img');
+  const scrollContainer  = document.getElementById('scroll-container');
+ 
+  let currentFrame  = 0;
+  let ticking       = false;
+  let locked        = false;       // true while we're holding the last frame
+  let lockDone      = false;       // true once the 5-sec lock has completed
+  let savedScrollY  = 0;
+ 
+  // ── Scroll lock helpers ──────────────────────────────────────
+  function lockScroll() {
+    savedScrollY = window.scrollY;
+    document.body.style.overflow   = 'hidden';
+    document.body.style.position   = 'fixed';
+    document.body.style.top        = `-${savedScrollY}px`;
+    document.body.style.width      = '100%';
+  }
+ 
+  function unlockScroll() {
+    document.body.style.overflow  = '';
+    document.body.style.position  = '';
+    document.body.style.top       = '';
+    document.body.style.width     = '';
+    window.scrollTo(0, savedScrollY);
+  }
+ 
+  // ── Start the 5-second hold ──────────────────────────────────
+  function startLock() {
+    locked = true;
+    lockScroll();
+ 
+    // Show countdown bar
+    countdownOverlay.classList.add('visible');
+    countdownBar.style.transition = 'none';
+    countdownBar.style.transform  = 'scaleX(1)';
+ 
+    // Kick off the shrink animation on next frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        countdownBar.style.transition = `transform ${LOCK_DURATION}ms linear`;
+        countdownBar.style.transform  = 'scaleX(0)';
+      });
+    });
+ 
+    setTimeout(() => {
+      locked   = false;
+      lockDone = true;
+      unlockScroll();
+ 
+      countdownOverlay.classList.remove('visible');
+      document.getElementById('scroll-hint').style.display = 'none';
+      document.getElementById('image-counter').style.display = 'none';
+      document.getElementById('scene-label').style.display = 'none';
+      document.getElementById('main-nav').classList.add('visible');
+      const logoPage = document.getElementById('logo-page');
+      logoPage.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => { logoImg.classList.add('visible'); }, 400);
+
+    }, LOCK_DURATION);
+  }
+ 
+  // ── Main scroll handler ──────────────────────────────────────
+  window.addEventListener('scroll', () => {
+    if (locked) return;
+    if (window.scrollY > window.innerHeight) {
+      document.getElementById('main-nav').classList.add('visible');
+    }
+    if (!ticking) {
+      requestAnimationFrame(updateFrame);
+      ticking = true;
+    }
+  });
+ 
+  function updateFrame() {
+    ticking = false;
+ 
+    const scrollTop      = window.scrollY;
+    const containerH     = scrollContainer.offsetHeight;
+    const maxScroll      = containerH - window.innerHeight;
+ 
+    // Only drive the animation while we're inside the scroll-container
+    const animScroll     = Math.min(scrollTop, maxScroll);
+    const scrollFraction = animScroll / maxScroll;
+ 
+    // Progress bar reflects animation progress only
+    progressBar.style.width = (scrollFraction * 100) + '%';
+ 
+    // Frame calculation (same logic as original)
+    const scenes = [
+      { start: 0,  end: 6  },
+      { start: 7,  end: 13 },
+      { start: 14, end: 20 },
+      { start: 21, end: 27 },
+      { start: 28, end: 34 },
+    ];
+ 
+    const sceneIndex    = Math.min(4, Math.floor(scrollFraction * 5));
+    const scene         = scenes[sceneIndex];
+    const sceneProgress = (scrollFraction * 5) - sceneIndex;
+    const frameIndex    = Math.min(scene.end, scene.start + Math.floor(sceneProgress * 7));
+ 
+    if (frameIndex !== currentFrame) {
+      currentFrame = frameIndex;
+ 
+      mainImage.src = (images[frameIndex] && images[frameIndex].complete)
+        ? images[frameIndex].src
+        : getImagePath(frameIndex + 1);
+        if (window.innerWidth <= 1024) {
+  document.getElementById('sticky-wrapper').style.backgroundImage = `url(${mainImage.src})`;
+}
+ 
+      counter.textContent = `${frameIndex + 1} / ${TOTAL_FRAMES}`;
+ 
+      let currentLabel = '';
+      for (const s of sceneLabels) {
+        if (frameIndex + 1 >= s.frame) currentLabel = s.label;
+      }
+      sceneLabel.textContent = currentLabel;
+    }
+ 
+   if (scrollTop > 100) {
+  scrollHint.style.display = 'none';
+}
+ 
+    // Trigger lock when last frame is reached (only once)
+    if (!lockDone && !locked && frameIndex >= TOTAL_FRAMES - 1) {
+      startLock();
+    }
+  }
+ 
+  // ── Reveal logo on scroll into view (if user manually scrolls there) ──
+  const logoObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      logoImg.classList.add('visible');
+    }
+  }, { threshold: 0.3 });
+  logoObserver.observe(document.getElementById('logo-page'));
+
+  // Scroll reveal for new sections
+const reveals = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('in');
+  });
+}, { threshold: 0.12 });
+reveals.forEach(el => revealObserver.observe(el));
+
+// ══ MAP SECTION ══
+const KK_PROJECTS = [
+  {
+    index: '01',
+    title: 'The House',
+    city: 'Alibaug',
+    location: 'Alibaug, Maharashtra',
+    lat: 18.6438, lng: 72.8737,
+    year: '2023', type: 'Residential', area: '4,200 sq ft', status: 'Completed',
+    desc: 'A coastal residence that folds inside and outside into a single continuous experience of light and breeze. Locally sourced laterite stone walls and reclaimed teak joinery ground the interiors in material memory.',
+    gradient: 'linear-gradient(135deg, #c4b49a 0%, #8a7a65 100%)',
+  },
+  {
+    index: '02',
+    title: ' Arts Centre',
+    city: 'Pune',
+    location: 'Pune, Maharashtra',
+    lat: 18.5246, lng: 73.8786,
+    year: '2022', type: 'Cultural', area: '18,000 sq ft', status: 'Completed',
+    desc: 'A cultural complex built around a central courtyard that acts as an open-air stage for the city. Archways reference the Maratha arcade tradition while carrying contemporary structural steel within.',
+    gradient: 'linear-gradient(135deg, #d4c8b4 0%, #9c8e76 100%)',
+  },
+  {
+    index: '03',
+    title: ' Gallery',
+    city: 'Delhi',
+    location: 'New Delhi',
+    lat: 28.6139, lng: 77.2090,
+    year: '2021', type: 'Cultural', area: '6,800 sq ft', status: 'Completed',
+    desc: 'A private gallery shaped around a stepwell — water as the organizing principle of the entire plan. The descent into the gallery mirrors the descent into a kund, light shifting with every step.',
+    gradient: 'linear-gradient(135deg, #b5a88e 0%, #6e6254 100%)',
+  },
+  {
+    index: '04',
+    title: ' Township',
+    city: 'Navi Mumbai',
+    location: 'Navi Mumbai, Maharashtra',
+    lat: 19.0330, lng: 73.0297,
+    year: '2023', type: 'Master Plan', area: '40 acres', status: 'Ongoing',
+    desc: 'A 40-acre master plan that weaves water channels, public plazas and mixed-use living into a walkable urban fabric. Designed around seven distinct neighbourhoods, each with its own identity.',
+    gradient: 'linear-gradient(135deg, #c8bba4 0%, #8c7e6a 100%)',
+  },
+  {
+    index: '06',
+    title: ' Retreat',
+    city: 'Coorg',
+    location: 'Madikeri, Karnataka',
+    lat: 12.4244, lng: 75.7382,
+    year: '2022', type: 'Hospitality', area: '12,000 sq ft', status: 'Completed',
+    desc: 'A hillside lodge where each pavilion is positioned to frame a specific view of the valley below — architecture as telescope. Built using local granite and coffee-wood, the lodge disappears into the forest canopy.',
+    gradient: 'linear-gradient(135deg, #cfc3ae 0%, #9a8c78 100%)',
+  },
+  {
+    index: '07',
+    title: ' Udyan',
+    city: 'Jaipur',
+    location: 'Jaipur, Rajasthan',
+    lat: 26.9124, lng: 75.7873,
+    year: '2021', type: 'Landscape', area: '3.5 acres', status: 'Completed',
+    desc: 'A public garden centred on a restored baoli, reviving the ancient tradition of water as civic gathering place. The landscape transitions from formal Mughal geometry near the baoli to wilder, native plantings at the edges.',
+    gradient: 'linear-gradient(135deg, #a89278 0%, #5c5040 100%)',
+  },
+];
+
+(function initMap() {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+  document.head.appendChild(link);
+
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+  script.onload = buildMap;
+  document.head.appendChild(script);
+})();
+
+function buildMap() {
+  const map = L.map('kk-map', {
+    center: [20.5937, 77.9629],
+    zoom: 5,
+    zoomControl: true,            // ← CHANGED
+    scrollWheelZoom: false,
+    attributionControl: false,
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+  }).addTo(map);
+
+  function makeIcon(proj, isActive) {
+    return L.divIcon({
+      className: '',
+      html: `
+        <div class="kk-marker${isActive ? ' active' : ''}" data-idx="${proj.index}">
+          <div class="kk-marker-pulse"></div>
+          <div class="kk-marker-dot"></div>
+          <span class="kk-marker-label">${proj.city}</span>
+        </div>`,
+      iconSize: [12, 12],
+      iconAnchor: [6, 6],
+    });
+  }
+
+  const markers = {};
+
+  KK_PROJECTS.forEach(proj => {
+    const marker = L.marker([proj.lat, proj.lng], {
+      icon: makeIcon(proj, false),
+    }).addTo(map);
+
+    marker.on('click', () => openPanel(proj, marker));
+    markers[proj.index] = marker;
+  });
+
+  // ← ADD THIS BLOCK after the forEach above
+  document.getElementById('map-search').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    const match = KK_PROJECTS.find(p =>
+      p.title.toLowerCase().includes(val) || p.city.toLowerCase().includes(val)
+    );
+    if (match) {
+      map.flyTo([match.lat, match.lng], 8, { duration: 1.2 });
+      openPanel(match, markers[match.index]);
+    }
+  });
+
+  const backdrop = document.getElementById('panel-backdrop');
+  const panel    = document.getElementById('proj-panel');
+  const closeBtn = document.getElementById('panel-close');
+
+  function openPanel(proj, marker) {
+    document.querySelectorAll('.map-loc-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.idx === proj.index));
+
+    document.getElementById('panel-index').textContent    = `Project ${proj.index}`;
+    document.getElementById('panel-title').textContent    = proj.title;
+    document.getElementById('panel-location').textContent = proj.location;
+    document.getElementById('panel-desc').textContent     = proj.desc;
+
+    const imgWrap = document.getElementById('panel-img');
+    imgWrap.style.background = proj.gradient;
+
+    document.getElementById('panel-meta').innerHTML = `
+      <div class="panel-meta-item"><p class="panel-meta-label">Year</p><p class="panel-meta-value">${proj.year}</p></div>
+      <div class="panel-meta-item"><p class="panel-meta-label">Type</p><p class="panel-meta-value">${proj.type}</p></div>
+      <div class="panel-meta-item"><p class="panel-meta-label">Area</p><p class="panel-meta-value">${proj.area}</p></div>
+      <div class="panel-meta-item"><p class="panel-meta-label">Status</p><p class="panel-meta-value">${proj.status}</p></div>`;
+
+    backdrop.classList.add('open');
+    panel.classList.add('open');
+  }
+
+  function closePanel() {
+    backdrop.classList.remove('open');
+    panel.classList.remove('open');
+    document.querySelectorAll('.map-loc-btn').forEach(b => b.classList.remove('active'));
+  }
+
+  closeBtn.addEventListener('click', closePanel);
+  backdrop.addEventListener('click', closePanel);
+}
+
+// Contact form
+const cBudgetLabels = ['Under ₹50L','₹50L–₹1Cr','₹1 Cr','₹2 Cr','₹3–5 Cr','₹5–10 Cr','₹10–25 Cr','₹25–50 Cr','₹50 Cr+','No limit','To discuss'];
+const cSlider = document.getElementById('c-budget');
+const cOut    = document.getElementById('c-budget-out');
+cSlider.addEventListener('input', () => cOut.textContent = cBudgetLabels[+cSlider.value]);
+
+document.getElementById('contact-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const required = this.querySelectorAll('[required]');
+  let valid = true;
+  required.forEach(f => {
+    if (!f.value.trim()) {
+      f.style.borderBottomColor = '#c0392b';
+      valid = false;
+      f.addEventListener('input', () => f.style.borderBottomColor = '', { once: true });
+    }
+  });
+  if (!valid) return;
+  this.style.display = 'none';
+  const s = document.getElementById('c-success');
+  s.style.display = 'flex';
+});
+
+function resetContactForm() {
+  document.getElementById('contact-form').reset();
+  document.getElementById('contact-form').style.display = '';
+  document.getElementById('c-success').style.display = 'none';
+  cOut.textContent = cBudgetLabels[2];
+  cSlider.value = 2;
+}
+
+// Show nav after countdown
+function showNav() {
+  document.getElementById('main-nav').classList.add('visible');
+}
+
+// Hamburger
+document.getElementById('nav-hamburger').addEventListener('click', () => {
+  document.getElementById('nav-hamburger').classList.toggle('open');
+  document.getElementById('nav-mobile-overlay').classList.toggle('open');
+});
+document.querySelectorAll('.nav-mobile-link').forEach(link => {
+  link.addEventListener('click', () => {
+    document.getElementById('nav-hamburger').classList.remove('open');
+    document.getElementById('nav-mobile-overlay').classList.remove('open');
+  });
+});
+
+</script>
+</body>
+</html>
