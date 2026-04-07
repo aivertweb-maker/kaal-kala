@@ -76,22 +76,13 @@ background-position: center;
 
     @media (max-width: 1024px) {
   #sticky-wrapper {
-    background-size: cover !important;
-    background-position: center !important;
+    background: #000 !important;
   }
   #sticky-wrapper::before {
-    content: '';
-    position: absolute;
-    inset: -30px;
-    background-image: inherit;
-    background-size: cover;
-    background-position: center;
-    filter: blur(24px) brightness(0.45);
-    z-index: 0;
+    display: none;
   }
   #main-image {
     object-fit: contain !important;
-    background: transparent !important;
     z-index: 1;
     position: relative;
   }
@@ -1920,7 +1911,7 @@ background-position: center;
 <!-- ══ FOOTER ══ -->
 <!-- ══ FOOTER ══ -->
 <!-- ══ FOOTER ══ -->
-<footer style="margin-top:3px;background:var(--ink); padding:40px 60px; border-top:1px solid rgba(232,221,208,0.06); display:flex; flex-direction:column; align-items:center; gap:10px;">
+<footer style="margin-top:3px;background:var(--ink); padding:40px 24px; border-top:1px solid rgba(232,221,208,0.06); display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;">
   <p style="font-family:'Cormorant Garamond',serif; font-size:0.85rem; letter-spacing:0.18em; color:rgba(232,221,208,0.3);">© 2024 Kaal Kala Architecture. All rights reserved.</p>
   <p style="font-family:'Outfit',sans-serif; font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:rgba(232,221,208,0.2);">
     Designed by <a href="https://www.instagram.com/aivertweb" target="_blank" style="color:var(--accent); text-decoration:none;" onmouseover="this.style.color='var(--sand)'" onmouseout="this.style.color='var(--accent)'">Anvita</a>
@@ -2060,7 +2051,7 @@ background-position: center;
       requestAnimationFrame(updateFrame);
       ticking = true;
     }
-  });
+  }, { passive: true });
  
   function updateFrame() {
     ticking = false;
