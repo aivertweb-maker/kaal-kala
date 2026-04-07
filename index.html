@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Home Tour</title>
+  <title>Kaal Kala</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
  
@@ -1906,6 +1906,8 @@ background-position: center;
         Submit another inquiry
       </button>
     </div>
+
+  
   </div>
 </section>
 <!-- ══ FOOTER ══ -->
@@ -2035,7 +2037,8 @@ background-position: center;
       document.getElementById('scene-label').style.display = 'none';
       document.getElementById('main-nav').classList.add('visible');
       const logoPage = document.getElementById('logo-page');
-      logoPage.scrollIntoView({ behavior: 'smooth' });
+      const logoTop = logoPage.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: logoTop, behavior: 'smooth' });
       setTimeout(() => { logoImg.classList.add('visible'); }, 400);
 
     }, LOCK_DURATION);
