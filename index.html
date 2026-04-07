@@ -2011,6 +2011,12 @@ background-position: center;
   // ── Start the 5-second hold ──────────────────────────────────
   function startLock() {
     locked = true;
+
+    // Snap scroll back to the bottom of the animation container
+    // before locking — prevents the bleed into the next section
+    const maxScroll = scrollContainer.offsetHeight - window.innerHeight;
+    window.scrollTo(0, maxScroll);
+
     lockScroll();
  
     // Show countdown bar
